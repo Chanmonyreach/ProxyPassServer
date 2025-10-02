@@ -1,51 +1,55 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const bodyParser = require('body-parser');
 
 const app = express();
 
 // ===============================
 // Configuration
 // ===============================
-
-const TARGET_URL = 'https://29dd3c0e69a3.ngrok-free.app';
-const port = 3000;
-
-// Determine environment: if using ngrok, consider it dev
-const isDev = TARGET_URL.includes('ngrok');
-
-// Timeout settings
-const TIMEOUT = isDev ? 60000 : 30000; // 30s for dev/ngrok, 10s for prod
-const PROXY_TIMEOUT = TIMEOUT;
+const TARGET_URL = 'https://29dd3c0e69a3.ngrok-free.app'; // your ngrok URL
+const PORT = 3000;
+const IS_DEV = TARGET_URL.includes('ngrok');
+const TIMEOUT = IS_DEV ? 60000 : 30000; // 60s for ngrok, 30s for prod
 
 // ===============================
 // Middleware
 // ===============================
 
-// Parse JSON and URL-encoded bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Use bodyParser but keep raw body for proxy
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // ===============================
 // Proxy setup
 // ===============================
-
 app.use(
   '/',
   createProxyMiddleware({
     target: TARGET_URL,
-    changeOrigin: true,  // needed for virtual hosted sites
-    secure: false,       // ignore TLS/HTTPS errors (useful for ngrok)
-    logLevel: 'debug',   // verbose logs
+    changeOrigin: true,
+    secure: false, // for self-signed TLS / ngrok
+    logLevel: 'debug',
     timeout: TIMEOUT,
-    proxyTimeout: PROXY_TIMEOUT,
+    proxyTimeout: TIMEOUT,
+    onProxyReq: (proxyReq, req, res) => {
+      // Only write body for POST/PUT/PATCH
+      if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+        if (req.body) {
+          const bodyData = JSON.stringify(req.body);
+          proxyReq.setHeader('Content-Type', 'application/json');
+          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+          proxyReq.write(bodyData);
+        }
+      }
+      console.log(`[Proxy] ${req.method} ${req.originalUrl} -> ${TARGET_URL}${req.originalUrl}`);
+    },
     onError: (err, req, res) => {
       console.error(`[Proxy Error] ${req.method} ${req.originalUrl}:`, err.message);
-      res.status(500).json({ error: 'Proxy error', details: err.message });
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Proxy error', details: err.message });
+      }
     },
-    // Optional: you can log each proxied request
-    onProxyReq: (proxyReq, req, res) => {
-      console.log(`[Proxy] ${req.method} ${req.originalUrl} -> ${TARGET_URL}${req.originalUrl}`);
-    }
   })
 );
 
@@ -59,8 +63,6 @@ app.get('/', (req, res) => {
 // ===============================
 // Start server
 // ===============================
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Proxy server listening on http://0.0.0.0:${port}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Proxy server listening on http://0.0.0.0:${PORT}`);
 });
-
-
