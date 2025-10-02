@@ -7,7 +7,7 @@ const app = express();
 // Configuration
 // ===============================
 
-const TARGET_URL = 'https://0aa608ba021b.ngrok-free.app';
+const TARGET_URL = 'https://29dd3c0e69a3.ngrok-free.app';
 const port = 3000;
 
 // Determine environment: if using ngrok, consider it dev
@@ -62,3 +62,4 @@ app.get('/', (req, res) => {
 app.listen(port, '0.0.0.0', () => {
   console.log(`Proxy server listening on http://0.0.0.0:${port}`);
 });
+
