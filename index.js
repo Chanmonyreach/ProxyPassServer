@@ -14,7 +14,7 @@ const port = 3000;
 const isDev = TARGET_URL.includes('ngrok');
 
 // Timeout settings
-const TIMEOUT = isDev ? 30000 : 10000; // 30s for dev/ngrok, 10s for prod
+const TIMEOUT = isDev ? 60000 : 30000; // 30s for dev/ngrok, 10s for prod
 const PROXY_TIMEOUT = TIMEOUT;
 
 // ===============================
@@ -62,4 +62,5 @@ app.get('/', (req, res) => {
 app.listen(port, '0.0.0.0', () => {
   console.log(`Proxy server listening on http://0.0.0.0:${port}`);
 });
+
 
