@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
@@ -8,35 +9,38 @@ const app = express();
 // ===============================
 const TARGET_URL = 'https://29dd3c0e69a3.ngrok-free.app';
 const PORT = 3000;
-
-// Timeout settings
-const TIMEOUT = 60000; // 60 seconds for ngrok dev
-const PROXY_TIMEOUT = TIMEOUT;
+const TIMEOUT = 60000; // 60 seconds
 
 // ===============================
-// Middleware for proxied routes
+// Middleware
 // ===============================
+app.use(cors());
 
-// Use raw body for all proxied requests to avoid consuming JSON
+// ===============================
+// Proxy all requests
+// ===============================
 app.use(
   '/',
-  express.raw({ type: '*/*', limit: '10mb' }), // adjust limit if needed
   createProxyMiddleware({
     target: TARGET_URL,
     changeOrigin: true, // required for virtual-hosted sites
     secure: false,      // ignore TLS issues for ngrok
     logLevel: 'debug',
     timeout: TIMEOUT,
-    proxyTimeout: PROXY_TIMEOUT,
-    onProxyReq: (proxyReq, req, res) => {
-      // Forward raw body
-      if (req.body && req.body.length) {
-        proxyReq.write(req.body);
-      }
-    },
+    proxyTimeout: TIMEOUT,
+    selfHandleResponse: false, // let proxy handle the response automatically
     onError: (err, req, res) => {
       console.error(`[Proxy Error] ${req.method} ${req.originalUrl}:`, err.message);
       res.status(500).json({ error: 'Proxy error', details: err.message });
+    },
+    onProxyReq: (proxyReq, req, res) => {
+      // If body exists, forward it
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
     },
   })
 );
@@ -45,7 +49,7 @@ app.use(
 // Root endpoint for testing
 // ===============================
 app.get('/', (req, res) => {
-  res.send('Proxy server running. All routes are forwarded to the backend.');
+  res.send('Proxy server running. All requests are forwarded to the backend.');
 });
 
 // ===============================
