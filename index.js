@@ -3,12 +3,16 @@ const cors = require('cors');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
+const PORT = 3000;
 
+// Middleware
+app.use(cors());
+app.use(bodyParser.json({ limit: '50mb' })); // Allow larger payloads
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 // ===============================
 // Configuration
 // ===============================
 const TARGET_URL = 'https://29dd3c0e69a3.ngrok-free.app';
-const PORT = 3000;
 const TIMEOUT = 60000; // 60 seconds
 
 // ===============================
@@ -58,3 +62,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Proxy server listening on http://0.0.0.0:${PORT}`);
 });
+
