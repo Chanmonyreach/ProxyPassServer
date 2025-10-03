@@ -7,12 +7,12 @@ const PORT = 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Allow larger payloads
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '1000mb' })); // Allow larger payloads
+app.use(express.urlencoded({ limit: '1000mb', extended: true }));
 // ===============================
 // Configuration
 // ===============================
-const TARGET_URL = 'https://29dd3c0e69a3.ngrok-free.app';
+const TARGET_URL = 'https://0d50324fe9c6.ngrok-free.app/';
 const TIMEOUT = 60000; // 60 seconds
 
 // ===============================
@@ -62,3 +62,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Proxy server listening on http://0.0.0.0:${PORT}`);
 });
+
